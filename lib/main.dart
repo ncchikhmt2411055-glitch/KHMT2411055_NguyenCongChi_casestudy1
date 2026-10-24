@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'transaction_form_screen.dart';
 
 void main() {
   runApp(const ExpenseManagerApp());
@@ -66,7 +67,12 @@ class WelcomeScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TransactionFormScreen(),
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1565C0),
                     foregroundColor: Colors.white,
@@ -80,7 +86,18 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const TransactionFormScreen(isEdit: true),
+                  ),
+                ),
+                child: const Text('Xem màn hình Sửa giao dịch'),
+              ),
+              const SizedBox(height: 8),
             ],
           ),
         ),
