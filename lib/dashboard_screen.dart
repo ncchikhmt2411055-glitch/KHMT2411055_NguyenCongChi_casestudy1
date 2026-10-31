@@ -53,8 +53,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  // Mở form Thêm (không truyền dữ liệu) hoặc form Sửa (truyền giao dịch).
-  // Khi form đóng với kết quả true thì tải lại dữ liệu.
   Future<void> _openForm([Map<String, Object?>? transaction]) async {
     final changed = await Navigator.push<bool>(
       context,
@@ -67,25 +65,96 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Widget _summaryCard(String label, double amount, Color color, IconData icon) {
+  Widget _balanceCard(double balance) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E88E5), Color(0xFF1565C0)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              children: [
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'SỐ DƯ HIỆN TẠI',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    SizedBox(width: 6),
+                    Icon(Icons.visibility_outlined,
+                        color: Colors.white70, size: 16),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  formatMoney(balance),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.account_balance_wallet,
+            color: Colors.white54,
+            size: 64,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryCard({
+    required String label,
+    required double amount,
+    required Color color,
+    required IconData icon,
+  }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Icon(icon, color: color),
-            const SizedBox(height: 8),
-            Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-            const SizedBox(height: 4),
-            Text(
-              formatMoney(amount),
-              style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 15),
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: color.withValues(alpha: 0.15),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    formatMoney(amount),
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -100,23 +169,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final note = (t['note'] as String?) ?? '';
     final color = Color(t['color_value'] as int);
     final icon = IconData(t['icon_code'] as int, fontFamily: 'MaterialIcons');
+    final date = displayDate(t['transaction_date'] as String);
 
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
+    return InkWell(
       onTap: () => _openForm(t),
-      leading: CircleAvatar(
-        backgroundColor: color,
-        child: Icon(icon, color: Colors.white, size: 18),
-      ),
-      title: Text(note.isNotEmpty ? note : categoryName),
-      subtitle: Text('$categoryName | ${displayDate(t['transaction_date'] as String)}'),
-      trailing: Text(
-        '${isExpense ? '-' : '+'}${formatMoney(amount)}',
-        style: TextStyle(
-          color: isExpense ? Colors.red : Colors.green,
-          fontWeight: FontWeight.w600,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: color,
+              child: Icon(icon, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    note.isNotEmpty ? note : categoryName,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$categoryName  $date',
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              '${isExpense ? '-' : '+'}${formatMoney(amount)}',
+              style: TextStyle(
+                color: isExpense ? Colors.red : Colors.green,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _recentList() {
+    if (_items.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: Text(
+            'Chưa có giao dịch nào. Bấm nút + để thêm.',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
+    final recent = _items.take(5).toList();
+    return Column(
+      children: [
+        for (int i = 0; i < recent.length; i++) ...[
+          _transactionTile(recent[i]),
+          if (i < recent.length - 1) const Divider(height: 1),
+        ],
+      ],
     );
   }
 
@@ -127,8 +243,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: const Text('Tổng quan'),
+        backgroundColor: Colors.white,
+        elevation: 0,
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.menu, color: Colors.black87),
+          onPressed: () {},
+        ),
+        title: const Text(
+          'Quản lý thu chi',
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+        ),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications_outlined, color: Colors.black87),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF1565C0),
@@ -144,56 +291,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1565C0),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Số dư hiện tại',
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          formatMoney(balance),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  _balanceCard(balance),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
-                      _summaryCard('Thu nhập', _income, const Color(0xFF4CAF50), Icons.arrow_downward),
+                      _summaryCard(
+                        label: 'TỔNG THU NHẬP',
+                        amount: _income,
+                        color: const Color(0xFF4CAF50),
+                        icon: Icons.arrow_downward,
+                      ),
                       const SizedBox(width: 12),
-                      _summaryCard('Chi tiêu', _expense, const Color(0xFFF44336), Icons.arrow_upward),
+                      _summaryCard(
+                        label: 'TỔNG CHI TIÊU',
+                        amount: _expense,
+                        color: const Color(0xFFF44336),
+                        icon: Icons.arrow_upward,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Giao dịch gần đây',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  if (_items.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Center(
-                        child: Text(
-                          'Chưa có giao dịch nào. Bấm nút + để thêm.',
-                          style: TextStyle(color: Colors.grey),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Giao dịch gần đây',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
+                      TextButton(
+                        onPressed: () {},
+                        child: const Text('Xem tất cả'),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                  ..._items.map(_transactionTile),
+                    child: _recentList(),
+                  ),
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
