@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
-import 'transaction_form_screen.dart';
 
 void main() {
   runApp(const ExpenseManagerApp());
@@ -85,17 +84,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const TransactionFormScreen(isEdit: true),
-                  ),
-                ),
-                child: const Text('Xem màn hình Sửa giao dịch'),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
             ],
           ),
         ),
